@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Doctor Dashboard</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand"><small>DOCTOR DASHBOARD</small><span id="dname"></span></div>
+  <div><a href="index.html" style="margin-right:14px">View Site</a><button class="btn" onclick="logout()">Logout</button></div>
+</nav>
+<div class="wrap">
+  <h2 id="welcome"></h2>
+  <p id="sub" style="color:var(--mute)"></p>
+  <div class="stats">
+    <div class="card stat"><b id="sTotal">0</b><span>Total Appointments</span></div>
+    <div class="card stat"><b id="sPending">0</b><span>Pending Appointments</span></div>
+    <div class="card stat"><b id="sAccepted">0</b><span>Accepted Appointments</span></div>
+    <div class="card stat"><b id="sRejected">0</b><span>Rejected Appointments</span></div>
+  </div>
+  <div class="card filters">
+    Status:
+    <button class="chip active" data-s="All">All</button>
+    <button class="chip" data-s="Pending">Pending</button>
+    <button class="chip" data-s="Accepted">Accepted</button>
+    <button class="chip" data-s="Rejected">Rejected</button>
+    <span style="margin-left:auto">Date: <input type="date" id="dateF" style="width:auto;display:inline-block"></span>
+  </div>
+  <div class="card" style="padding:0;overflow:auto">
+    <table>
+      <thead><tr><th>PATIENT</th><th>PHONE</th><th>DATE</th><th>TIME</th><th>REASON</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+const me = Auth.require('doctor');
+let all = [], status = 'All';
+dname.textContent = me.user.name;
+welcome.textContent = 'Welcome, ' + me.user.name.split(' ').slice(0, 2).join(' ') + ' 👋';
+sub.textContent = `${me.user.specialization} · ${me.user.availability}`;
+
+async function load() { all = await api('/doctor/appointments'); render(); }
+function render() {
+  const c = s => all.filter(a => a.status === s).length;
+  sTotal.textContent = all.length; sPending.textContent = c('Pending'); sAccepted.textContent = c('Accepted'); sRejected.textContent = c('Rejected');
+  const list = all.filter(a => (status === 'All' || a.status === status) && (!dateF.value || a.date === dateF.value));
+  rows.innerHTML = list.map(a => `<tr>
+    <td><b>${esc(a.patient_name)}</b></td><td>${esc(a.patient_phone)}</td><td>${esc(a.date)}</td><td>${esc(a.time_slot)}</td>
+    <td>${esc(a.reason)}</td><td><span class="pill ${a.status}">${a.status}</span></td>
+    <td>${a.status === 'Pending' ? `<button class="btn sm green" onclick="setS(${a.appointment_id},'Accepted')">Accept</button> <button class="btn sm red" onclick="setS(${a.appointment_id},'Rejected')">Reject</button>` : '—'}</td>
+  </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--mute)">No appointments</td></tr>';
+}
+async function setS(id, s) { await api(`/appointments/${id}/status`, { method: 'PATCH', body: { status: s } }); load(); }
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); status = b.dataset.s; render();
+});
+dateF.onchange = render;
+load();
+</script>
+</body>
+</html>

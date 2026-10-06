@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book an Appointment</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="top"><div class="brand">Shree Bhagwant<small>Superspeciality Hospital</small></div><a href="index.html">← Back to Site</a></nav>
+<div class="wrap" style="max-width:640px">
+  <div style="text-align:center;margin:10px 0 24px">
+    <h1>Book an Appointment</h1>
+    <p style="color:var(--mute)">Fill in your details below and we'll confirm your appointment promptly.</p>
+  </div>
+  <div class="card">
+    <div id="msg" class="msg"></div>
+    <form id="f">
+      <div class="two">
+        <div class="field"><label>Patient Name *</label><input id="name" placeholder="Full name" required></div>
+        <div class="field"><label>Phone Number *</label><input id="phone" placeholder="10-digit number" pattern="\d{10}" maxlength="10" required></div>
+      </div>
+      <div class="field"><label>Email Address (Optional)</label><input id="email" type="email" placeholder="your@email.com"></div>
+      <div class="field"><label>Select Doctor *</label><select id="doctor" required><option value="">-- Choose a doctor --</option></select></div>
+      <div class="two">
+        <div class="field"><label>Preferred Date *</label><input id="date" type="date" required></div>
+        <div class="field"><label>Time Slot *</label><select id="slot" required><option value="">-- Select time --</option></select></div>
+      </div>
+      <div class="field"><label>Reason / Chief Complaint (Optional)</label><textarea id="reason" rows="3" placeholder="Describe your symptoms or reason for visit..."></textarea></div>
+      <button class="btn" style="width:100%;justify-content:center">Confirm Appointment</button>
+    </form>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+const msg = document.getElementById('msg');
+date.min = new Date().toISOString().slice(0, 10);
+
+api('/doctors').then(list => {
+  doctor.innerHTML += list.map(d => `<option value="${d.doctor_id}">${esc(d.name)} — ${esc(d.specialization)}</option>`).join('');
+}).catch(() => showMsg(msg, 'err', 'Cannot reach server. Start the backend (npm start).'));
+
+async function loadSlots() {
+  slot.innerHTML = '<option value="">-- Select time --</option>';
+  if (!doctor.value || !date.value) return;
+  const slots = await api(`/slots?doctor_id=${doctor.value}&date=${date.value}`);
+  slot.innerHTML += slots.map(s => `<option value="${esc(s.time)}" ${s.available ? '' : 'disabled'}>${esc(s.time)}${s.available ? '' : ' (booked)'}</option>`).join('');
+}
+doctor.onchange = date.onchange = loadSlots;
+
+f.onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await api('/appointments', { method: 'POST', body: {
+      name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(),
+      doctor_id: doctor.value, date: date.value, time_slot: slot.value, reason: reason.value.trim()
+    }});
+    showMsg(msg, 'ok', 'Appointment requested! Status: Pending. We will confirm shortly.');
+    f.reset(); slot.innerHTML = '<option value="">-- Select time --</option>';
+  } catch (err) { showMsg(msg, 'err', err.message); loadSlots(); }
+  scrollTo({ top: 0, behavior: 'smooth' });
+};
+</script>
+</body>
+</html>
