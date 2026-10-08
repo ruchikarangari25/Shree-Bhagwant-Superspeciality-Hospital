@@ -334,6 +334,10 @@ app.delete('/api/admin/doctors/:id', auth(['admin']), async (req, res) => {
 const FRONT = path.join(__dirname, '..', 'frontend');
 if (require('fs').existsSync(FRONT)) app.use(express.static(FRONT));
 
+app.get('/', (req, res) => {
+  res.sendFile(path.join(FRONT, 'index.html'));
+});
+
 initializeDatabase()
   .then(() => app.listen(PORT, () => console.log(`HMS API running on http://localhost:${PORT}`)))
   .catch(err => {
