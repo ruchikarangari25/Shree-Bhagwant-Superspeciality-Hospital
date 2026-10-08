@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Panel</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand" style="margin-bottom:18px"><small>ADMIN PANEL</small>HMS</div>
+    <button data-t="overview" class="active">📊 Overview</button>
+    <button data-t="doctors">🧑‍⚕️ Doctors</button>
+    <button data-t="appointments">📅 Appointments</button>
+    <button data-t="patients">🧍 Patients</button>
+    <hr style="margin:12px 0;border:0;border-top:1px solid var(--line)">
+    <button onclick="location.href='index.html'">🌐 View Website</button>
+    <button onclick="logout()" style="color:var(--red)">🚪 Logout</button>
+  </aside>
+  <main class="panel" id="main"></main>
+</div>
+<script src="js/api.js"></script>
+<script>
+const me = Auth.require('admin');
+let tab = 'overview', D = [], A = [], P = [];
+
+async function refresh() {
+  [D, A, P] = await Promise.all([api('/admin/doctors'), api('/admin/appointments'), api('/admin/patients')]);
+  render();
+}
+const pill = s => `<span class="pill ${s}">${s}</span>`;
+const count = s => A.filter(a => a.status === s).length;
+
+function render() {
+  const m = document.getElementById('main');
+  if (tab === 'overview') {
+    m.innerHTML = `<div style="display:flex;justify-content:space-between"><h2>📊 Overview</h2><span>Admin: <b>${esc(me.user.name)}</b></span></div>
+    <div class="stats">
+      <div class="card stat"><b>${D.length}</b><span>Total Doctors</span></div>
+      <div class="card stat"><b>${A.length}</b><span>Total Appointments</span></div>
+      <div class="card stat"><b>${count('Pending')}</b><span>Pending</span></div>
+      <div class="card stat"><b>${count('Accepted')}</b><span>Accepted</span></div>
+    </div>
+    <div class="card" style="padding:0;margin-bottom:16px"><h3 style="padding:16px">Recent Appointments</h3>${apptTable(A.slice(0, 5), false)}</div>
+    <div class="card"><h3>Doctors</h3>${D.map(d => `<p style="padding:10px 0;border-top:1px solid var(--line)"><b>${esc(d.name)}</b> <small style="color:var(--mute)">${esc(d.specialization)}</small> <span class="pill Pending" style="float:right">${d.appointments} appts</span></p>`).join('')}</div>`;
+  } else if (tab === 'appointments') {
+    m.innerHTML = `<h2>📅 Appointments</h2><div class="card" style="padding:0;margin-top:14px;overflow:auto">${apptTable(A, true)}</div>`;
+  } else if (tab === 'patients') {
+    m.innerHTML = `<h2>🧍 Patients</h2><div class="card" style="padding:0;margin-top:14px"><table><thead><tr><th>ID</th><th>NAME</th><th>PHONE</th><th>EMAIL</th><th>APPOINTMENTS</th></tr></thead><tbody>
+    ${P.map(p => `<tr><td>${p.patient_id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.phone)}</td><td>${esc(p.email)}</td><td>${p.appointments}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--mute)">No patients yet</td></tr>'}</tbody></table></div>`;
+  } else if (tab === 'doctors') {
+    m.innerHTML = `<h2>🧑‍⚕️ Doctors</h2>
+    <div class="card" style="margin:14px 0"><h3>Add Doctor</h3><div id="dmsg" class="msg"></div>
+      <form id="df" class="two" style="margin-top:10px">
+        <div class="field"><label>Name *</label><input name="name" required></div>
+        <div class="field"><label>Specialization *</label><input name="specialization" required></div>
+        <div class="field"><label>Email *</label><input name="email" type="email" required></div>
+        <div class="field"><label>Password *</label><input name="password" required></div>
+        <div class="field"><label>Phone</label><input name="phone"></div>
+        <div class="field"><label>Availability</label><input name="availability" placeholder="Mon-Sat, 9 AM - 5 PM"></div>
+        <div><button class="btn">Add Doctor</button></div>
+      </form></div>
+    <div class="card" style="padding:0"><table><thead><tr><th>NAME</th><th>SPECIALIZATION</th><th>EMAIL</th><th>AVAILABILITY</th><th>APPTS</th><th></th></tr></thead><tbody>
+    ${D.map(d => `<tr><td><b>${esc(d.name)}</b></td><td>${esc(d.specialization)}</td><td>${esc(d.email)}</td><td>${esc(d.availability)}</td><td>${d.appointments}</td><td><button class="btn sm red" onclick="delDoc(${d.doctor_id})">Delete</button></td></tr>`).join('')}</tbody></table></div>`;
+    document.getElementById('df').onsubmit = async e => {
+      e.preventDefault();
+      try { await api('/admin/doctors', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) }); refresh(); }
+      catch (err) { showMsg(document.getElementById('dmsg'), 'err', err.message); }
+    };
+  }
+}
+function apptTable(list, actions) {
+  return `<table><thead><tr><th>PATIENT</th><th>DOCTOR</th><th>DATE</th><th>TIME</th><th>STATUS</th>${actions ? '<th>ACTIONS</th>' : ''}</tr></thead><tbody>
+  ${list.map(a => `<tr><td><b>${esc(a.patient_name)}</b></td><td>${esc(a.doctor_name)}</td><td>${esc(a.date)}</td><td>${esc(a.time_slot)}</td><td>${pill(a.status)}</td>
+  ${actions ? `<td><button class="btn sm green" onclick="setS(${a.appointment_id},'Accepted')">Accept</button> <button class="btn sm red" onclick="setS(${a.appointment_id},'Rejected')">Reject</button> <button class="btn sm ghost" onclick="delA(${a.appointment_id})">Delete</button></td>` : ''}</tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--mute)">No appointments</td></tr>'}</tbody></table>`;
+}
+async function setS(id, s) { await api(`/appointments/${id}/status`, { method: 'PATCH', body: { status: s } }); refresh(); }
+async function delA(id) { if (confirm('Delete this appointment?')) { await api('/admin/appointments/' + id, { method: 'DELETE' }); refresh(); } }
+async function delDoc(id) { try { if (confirm('Delete this doctor?')) { await api('/admin/doctors/' + id, { method: 'DELETE' }); refresh(); } } catch (e) { alert(e.message); } }
+document.querySelectorAll('aside button[data-t]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('aside button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); tab = b.dataset.t; render();
+});
+refresh();
+</script>
+</body>
+</html>
