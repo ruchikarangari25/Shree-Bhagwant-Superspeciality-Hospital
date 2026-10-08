@@ -55,4 +55,6 @@ WHERE NOT EXISTS (SELECT 1 FROM doctors WHERE email='sumit@bhagwant.com');
 CREATE DATABASE hms_db;
 USE hms_db;
 
+SHOW TABLES;
+
 

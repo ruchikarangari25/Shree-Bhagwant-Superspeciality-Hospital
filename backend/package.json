@@ -3,9 +3,12 @@
   "version": "2.0.0",
   "description": "Hospital Management System - Node.js, Express and MySQL",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^18.0.6",
     "express": "^4.19.2",
     "mysql2": "^3.14.1"
   }
