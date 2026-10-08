@@ -331,7 +331,8 @@ app.delete('/api/admin/doctors/:id', auth(['admin']), async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Database error', detail: err.message }); }
 });
 
-const FRONT = path.join(__dirname, '..', 'frontend');
+const FRONT = path.join(__dirname, 'frontend');
+
 
 if (require('fs').existsSync(FRONT)) {
     app.use(express.static(FRONT));

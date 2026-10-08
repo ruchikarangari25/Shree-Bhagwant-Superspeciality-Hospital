@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shree Bhagwant Superspeciality Hospital</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">Shree Bhagwant<small>Superspeciality Hospital</small></div>
+  <div class="links"><a href="#about">About</a><a href="#doctors">Doctors</a><a href="#services">Services</a><a href="#contact">Contact</a></div>
+  <a class="btn" href="tel:+910000000000">Call Now</a>
+</nav>
+
+<header class="hero">
+  <div class="badge">NABH ACCREDITED HOSPITAL</div>
+  <h1>Shree Bhagwant Superspeciality Hospital</h1>
+  <p>Advanced Neuro &amp; Orthopaedic Care in Barshi</p>
+  <div class="row">
+    <a class="btn" href="book.html">Book Appointment</a>
+    <a class="btn ghost" href="#contact">Get Directions</a>
+  </div>
+</header>
+
+<section class="block" id="about">
+  <h2>About Us</h2>
+  <p>A multi-speciality hospital providing advanced neurosurgery and orthopaedic care with modern facilities and experienced doctors.</p>
+</section>
+
+<section class="block" id="services">
+  <h2>Our Core Specialities</h2>
+  <div class="grid">
+    <div class="card"><h3>Neurosurgery</h3><p>Brain &amp; spine surgery, head injury care.</p></div>
+    <div class="card"><h3>Orthopaedics</h3><p>Joint replacement, fracture and trauma care.</p></div>
+    <div class="card"><h3>Emergency</h3><p>24x7 emergency and ICU support.</p></div>
+  </div>
+</section>
+
+<section class="block" id="doctors">
+  <h2>Our Doctors</h2>
+  <div class="grid" id="docList"><p>Loading…</p></div>
+</section>
+
+<section class="block" id="contact">
+  <h2>Contact</h2>
+  <p>Shree Bhagwant Superspeciality Hospital, Barshi, Maharashtra.</p>
+</section>
+
+<div class="float">
+  <a class="btn" href="book.html">Book Appointment</a>
+  <a class="btn ghost" href="login.html">Staff Login</a>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+api('/doctors').then(list => {
+  document.getElementById('docList').innerHTML = list.map(d =>
+    `<div class="card"><h3>${esc(d.name)}</h3><p>${esc(d.specialization)}</p><p style="color:var(--mute);font-size:13px">${esc(d.availability)}</p></div>`).join('');
+}).catch(() => document.getElementById('docList').innerHTML = '<p>Start the backend server to load doctors.</p>');
+</script>
+</body>
+</html>
